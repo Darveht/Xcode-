@@ -1,0 +1,367 @@
+import React, { useState } from 'react';
+import { 
+  Search, 
+  Heart, 
+  MessageCircle, 
+  Upload, 
+  User, 
+  Bookmark,
+  X 
+} from 'lucide-react';
+
+const SocialNewsPlatform = () => {
+  const [noticias, setNoticias] = useState([
+    {
+      id: 1,
+      autor: 'María Pérez',
+      titulo: 'Nuevo proyecto de ley cambia educación',
+      categoria: 'Política',
+      contenido: 'El gobierno presenta una reforma educativa que busca transformar fundamentalmente el sistema de educación nacional. Esta iniciativa propone cambios estructurales en los planes de estudio, inversión en infraestructura educativa y mejoras significativas en la formación docente.\n\nLos puntos principales de la reforma incluyen:\n\n1. Actualización de planes de estudio con énfasis en habilidades digitales\n2. Aumento del presupuesto para escuelas en zonas rurales\n3. Programas de capacitación continua para profesores\n\nLa propuesta ha generado diversos debates en el ámbito académico y político, con opiniones divididas sobre su implementación y alcance.',
+      imagen: '/api/placeholder/600/400',
+      likes: 157,
+      comentarios: 23,
+      fecha: new Date('2024-03-15')
+    },
+    {
+      id: 2,
+      autor: 'Carlos Rodríguez',
+      titulo: 'Avances tecnológicos en inteligencia artificial',
+      categoria: 'Tecnología', 
+      contenido: 'La inteligencia artificial continúa su rápido desarrollo, presentando innovaciones que transforman múltiples industrias. Empresas líderes en tecnología están implementando modelos de machine learning más avanzados que nunca.\n\nAlgunos de los desarrollos más destacados incluyen:\n\n- Sistemas de traducción en tiempo real\n- Diagnósticos médicos automatizados\n- Asistentes virtuales más inteligentes\n\nExpertos anticipan que estos avances podrían revolucionar campos como la medicina, la educación y la investigación científica en los próximos años.',
+      imagen: '/api/placeholder/600/400',
+      likes: 342,
+      comentarios: 45,
+      fecha: new Date('2024-03-10')
+    }
+  ]);
+
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroCategoria, setFiltroCategoria] = useState('');
+  const [noticiaSeleccionada, setNoticiaSeleccionada] = useState(null);
+  const [likedNews, setLikedNews] = useState({});
+
+  const [nuevaNoticia, setNuevaNoticia] = useState({
+    autor: '',
+    titulo: '',
+    categoria: '',
+    contenido: '',
+    imagen: null
+  });
+
+  const formatearFecha = (fecha) => {
+    return new Intl.DateTimeFormat('es-ES', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    }).format(fecha);
+  };
+
+  const handleLike = (id) => {
+    setLikedNews(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+
+    setNoticias(prev => prev.map(noticia => 
+      noticia.id === id 
+        ? { ...noticia, likes: likedNews[id] ? noticia.likes - 1 : noticia.likes + 1 }
+        : noticia
+    ));
+  };
+
+  const handlePublicar = (e) => {
+    e.preventDefault();
+    const noticiaCompleta = {
+      ...nuevaNoticia,
+      id: noticias.length + 1,
+      likes: 0,
+      comentarios: 0,
+      imagen: nuevaNoticia.imagen || '/api/placeholder/600/400',
+      fecha: new Date()
+    };
+    setNoticias([noticiaCompleta, ...noticias]);
+    setNuevaNoticia({
+      autor: '',
+      titulo: '',
+      categoria: '',
+      contenido: '',
+      imagen: null
+    });
+  };
+
+  const handleImagenUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNuevaNoticia({...nuevaNoticia, imagen: reader.result});
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const noticiasFilter = noticias
+    .filter(noticia => 
+      noticia.titulo.toLowerCase().includes(busqueda.toLowerCase()) &&
+      (filtroCategoria === '' || noticia.categoria === filtroCategoria)
+    )
+    .sort((a, b) => b.fecha - a.fecha);
+
+  return (
+    <div className="max-w-2xl mx-auto bg-white min-h-screen relative">
+      {/* Barra de navegación */}
+      <nav className="flex justify-between p-4 border-b">
+        <h1 className="text-2xl font-bold">SocialNews</h1>
+        <div className="flex space-x-4">
+          <Search />
+          <User />
+          <Bookmark />
+        </div>
+      </nav>
+
+      {/* Barra de búsqueda y filtros */}
+      <div className="p-4 flex space-x-2">
+        <div className="relative flex-grow">
+          <input 
+            type="text" 
+            placeholder="Buscar noticias..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="w-full p-2 border rounded-lg pl-10"
+          />
+          <Search className="absolute left-3 top-3 text-gray-400" />
+        </div>
+        <select 
+          value={filtroCategoria}
+          onChange={(e) => setFiltroCategoria(e.target.value)}
+          className="p-2 border rounded-lg"
+        >
+          <option value="">Todas las categorías</option>
+          <option value="Política">Política</option>
+          <option value="Tecnología">Tecnología</option>
+          <option value="Deportes">Deportes</option>
+          <option value="Entretenimiento">Entretenimiento</option>
+        </select>
+      </div>
+
+      {/* Formulario para publicar noticia */}
+      <div className="p-4 border-b">
+        <form onSubmit={handlePublicar} className="space-y-4">
+          <input 
+            type="text" 
+            placeholder="Tu nombre"
+            value={nuevaNoticia.autor}
+            onChange={(e) => setNuevaNoticia({...nuevaNoticia, autor: e.target.value})}
+            className="w-full p-2 border rounded-lg"
+            required
+          />
+          <input 
+            type="text" 
+            placeholder="Título de la noticia"
+            value={nuevaNoticia.titulo}
+            onChange={(e) => setNuevaNoticia({...nuevaNoticia, titulo: e.target.value})}
+            className="w-full p-2 border rounded-lg"
+            required
+          />
+          <select 
+            value={nuevaNoticia.categoria}
+            onChange={(e) => setNuevaNoticia({...nuevaNoticia, categoria: e.target.value})}
+            className="w-full p-2 border rounded-lg"
+            required
+          >
+            <option value="">Selecciona categoría</option>
+            <option value="Política">Política</option>
+            <option value="Tecnología">Tecnología</option>
+            <option value="Deportes">Deportes</option>
+            <option value="Entretenimiento">Entretenimiento</option>
+          </select>
+          <textarea 
+            placeholder="Contenido de la noticia"
+            value={nuevaNoticia.contenido}
+            onChange={(e) => setNuevaNoticia({...nuevaNoticia, contenido: e.target.value})}
+            className="w-full p-2 border rounded-lg h-24"
+            required
+          />
+          <div className="flex items-center space-x-4">
+            <input 
+              type="file" 
+              accept="image/*"
+              onChange={handleImagenUpload}
+              className="hidden"
+              id="imagen-upload"
+            />
+            <label 
+              htmlFor="imagen-upload" 
+              className="flex items-center cursor-pointer p-2 border rounded-lg"
+            >
+              <Upload className="mr-2" /> Subir Imagen
+            </label>
+            {nuevaNoticia.imagen && (
+              <img 
+                src={nuevaNoticia.imagen} 
+                alt="Vista previa" 
+                className="w-20 h-20 object-cover rounded"
+              />
+            )}
+          </div>
+          <button 
+            type="submit" 
+            className="w-full bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600"
+          >
+            Publicar Noticia
+          </button>
+        </form>
+      </div>
+
+      {/* Feed de noticias */}
+      <div>
+        {noticiasFilter.map(noticia => (
+          <div 
+            key={noticia.id} 
+            className="p-4 border-b cursor-pointer"
+            onClick={() => setNoticiaSeleccionada(noticia)}
+          >
+            <div className="flex items-center mb-2">
+              <img 
+                src="/api/placeholder/50/50" 
+                alt={noticia.autor} 
+                className="w-10 h-10 rounded-full mr-3"
+              />
+              <div>
+                <p className="font-semibold">{noticia.autor}</p>
+                <p className="text-sm text-gray-500">{noticia.categoria}</p>
+              </div>
+            </div>
+            <h2 className="text-xl font-bold mb-2">{noticia.titulo}</h2>
+            <img 
+              src={noticia.imagen} 
+              alt={noticia.titulo} 
+              className="w-full h-64 object-cover rounded-lg mb-3"
+            />
+            <p className="mb-3 line-clamp-2">{noticia.contenido}</p>
+            <div className="flex justify-between items-center">
+              <div className="flex space-x-4">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleLike(noticia.id);
+                  }}
+                  className={`flex items-center transform transition-transform ${
+                    likedNews[noticia.id] ? 'text-red-500 scale-110' : 'text-gray-700'
+                  }`}
+                >
+                  <Heart 
+                    className={`mr-2 ${
+                      likedNews[noticia.id] 
+                        ? 'fill-current animate-pulse' 
+                        : ''
+                    }`} 
+                  /> 
+                  {noticia.likes}
+                </button>
+                <button className="flex items-center">
+                  <MessageCircle className="mr-2" /> {noticia.comentarios}
+                </button>
+              </div>
+              <p className="text-sm text-gray-500">
+                {formatearFecha(noticia.fecha)}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Modal de noticia completa */}
+      {noticiaSeleccionada && (
+        <div 
+          className="fixed inset-0 bg-white z-50 overflow-y-auto animate-fade-in"
+          style={{
+            animation: 'fadeIn 0.3s ease-out',
+            overscrollBehavior: 'contain'
+          }}
+        >
+          <div className="p-4 relative">
+            <button 
+              onClick={() => setNoticiaSeleccionada(null)}
+              className="absolute top-4 right-4 z-60"
+            >
+              <X size={32} />
+            </button>
+
+            <div className="flex items-center mb-4">
+              <img 
+                src="/api/placeholder/50/50" 
+                alt={noticiaSeleccionada.autor} 
+                className="w-12 h-12 rounded-full mr-4"
+              />
+              <div>
+                <p className="font-semibold text-lg">{noticiaSeleccionada.autor}</p>
+                <p className="text-sm text-gray-500">
+                  {noticiaSeleccionada.categoria} | {formatearFecha(noticiaSeleccionada.fecha)}
+                </p>
+              </div>
+            </div>
+
+            <h1 className="text-2xl font-bold mb-4">{noticiaSeleccionada.titulo}</h1>
+
+            <img 
+              src={noticiaSeleccionada.imagen} 
+              alt={noticiaSeleccionada.titulo} 
+              className="w-full max-h-96 object-cover rounded-lg mb-6"
+            />
+
+            <div className="prose max-w-full whitespace-pre-line">
+              {noticiaSeleccionada.contenido}
+            </div>
+
+            <div className="mt-6 flex justify-between items-center border-t pt-4">
+              <div className="flex space-x-4">
+                <button 
+                  onClick={() => handleLike(noticiaSeleccionada.id)}
+                  className={`flex items-center transform transition-transform ${
+                    likedNews[noticiaSeleccionada.id] 
+                      ? 'text-red-500 scale-110' 
+                      : 'text-gray-700'
+                  }`}
+                >
+                  <Heart 
+                    className={`mr-2 ${
+                      likedNews[noticiaSeleccionada.id] 
+                        ? 'fill-current animate-pulse' 
+                        : ''
+                    }`} 
+                  /> 
+                  {noticiaSeleccionada.likes}
+                </button>
+                <button className="flex items-center">
+                  <MessageCircle className="mr-2" /> {noticiaSeleccionada.comentarios}
+                </button>
+              </div>
+              <button>Compartir</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Estilos personalizados para animaciones */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.3s ease-out;
+        }
+        .animate-pulse {
+          animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.2); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default SocialNewsPlatform;
